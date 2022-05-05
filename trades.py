@@ -1,5 +1,6 @@
 import json, time, datetime
 from web3 import Web3
+from addresses import mainnetTokens
 
 class IAmButASimpleFarmer():
 
@@ -21,10 +22,6 @@ class IAmButASimpleFarmer():
             "Shebaswap": "0x03f7724180AA6b939894B5Ca4314783B0b36b329",
             "Sakeswap": "0x9C578b573EdE001b95d51a55A3FAfb45f5608b1f"}
 
-        self.token_address_dict = {
-            "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "DAI": "0x6B175474E89094C44Da98b954EedeAC495271d0F"}
-
         self.exchange_contract_dict = {
             "Uniswap": self.web3.eth.contract(abi=self.uniswaprouterabi, address=self.exchange_address_dict["Uniswap"]),
             "Sushiswap": self.web3.eth.contract(abi=self.uniswaprouterabi, address=self.exchange_address_dict["Sushiswap"]),
@@ -32,10 +29,10 @@ class IAmButASimpleFarmer():
             "Sakeswap": self.web3.eth.contract(abi=self.uniswaprouterabi, address=self.exchange_address_dict["Sakeswap"])}
 
         self.token_contract_dict = {
-            "WETH": self.web3.eth.contract(abi=self.wethabi, address=self.token_address_dict["WETH"]),
-            "DAI": self.web3.eth.contract(abi=self.erc20abi, address=self.token_address_dict["DAI"])}
+            "WETH": self.web3.eth.contract(abi=self.wethabi, address=mainnetTokens.WETH["address"]),
+            "DAI": self.web3.eth.contract(abi=self.erc20abi, address=mainnetTokens.DAI["address"])}
 
-        self.chainId = 1
+        self.chainId = self.web3.eth.chain_id
 
 
     def approvals(self, contract, token, wallet):
@@ -44,23 +41,26 @@ class IAmButASimpleFarmer():
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
         print(f"approval for {contract} to spend {token} for {wallet.address}")
 
+
     def wrap_weth(self, amount, wallet):
         transaction = self.token_contract_dict["WETH"].functions.deposit().buildTransaction({'value': amount,'chainId': self.chainId, 'gas': self.web3.toHex(50000),'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
-        print(f"wrapped {amount/10**18} WETH: {txhash.hex()}")
+        print(f"{wallet.address} wrapped {amount/10**18} WETH: {txhash.hex()}")
+
 
     def get_dai(self, amount, wallet):
-        transaction = self.exchange_contract_dict["Uniswap"].functions.swapExactETHForTokens(1, [self.token_address_dict["WETH"], self.token_address_dict["DAI"]], wallet.address, 1666666666).buildTransaction({'value': amount, 'chainId': self.chainId, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
+        transaction = self.exchange_contract_dict["Uniswap"].functions.swapExactETHForTokens(1, [mainnetTokens.WETH["address"], mainnetTokens.DAI["address"]], wallet.address, 1666666666).buildTransaction({'value': amount, 'chainId': self.chainId, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
-        print(f"swapped {amount/10**18} ETH for DAI: {txhash.hex()}")
+        print(f"{wallet.address} swapped {amount/10**18} ETH for DAI: {txhash.hex()}")
+
 
     def swap(self, exchange, amountIn, amountOutMin, inToken, outToken, wallet):
         transaction = self.exchange_contract_dict[exchange].functions.swapExactTokensForTokens(amountIn, amountOutMin, [inToken, outToken], wallet.address, self.deadline).buildTransaction({'chainId': self.chainId, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100), 'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
-        print(f"{wallet.address} swapped {amountIn/10**18} {inToken} for {outToken}: {txhash.hex()}")
+        print(f"{wallet.address} swapped {amountIn/10**18} {mainnetTokens.address_to_coin[inToken]} for {mainnetTokens.address_to_coin[outToken]}: {txhash.hex()}")
 
 
     def prices(self, exchange, amount, inToken, outToken):
@@ -76,8 +76,8 @@ class IAmButASimpleFarmer():
     def create_imbalances(self, wallet):
         print("making trades to create imbalances")
         self.wrap_weth(250*10**18, wallet)
-        self.swap("Sushiswap", self.token_contract_dict["WETH"].functions.balanceOf(wallet.address).call(), 1000, self.token_address_dict["WETH"], self.token_address_dict["DAI"], wallet)
-        self.swap("Uniswap", self.token_contract_dict["DAI"].functions.balanceOf(wallet.address).call(), 1000, self.token_address_dict["DAI"], self.token_address_dict["WETH"], wallet)
+        self.swap("Sushiswap", self.token_contract_dict["WETH"].functions.balanceOf(wallet.address).call(), 1000, mainnetTokens.WETH["address"], mainnetTokens.DAI["address"], wallet)
+        self.swap("Uniswap", self.token_contract_dict["DAI"].functions.balanceOf(wallet.address).call(), 1000, mainnetTokens.DAI["address"], mainnetTokens.WETH["address"], wallet)
 
 
     def execute_setup(self, wallet):
@@ -88,8 +88,8 @@ class IAmButASimpleFarmer():
         # check prices at current levels
         eth_amount = 10*10**18
         dai_amount = 10000*10**18
-        uni_weth_to_dai = self.prices("Uniswap", eth_amount, self.token_address_dict["WETH"], self.token_address_dict["DAI"])/10**18
-        uni_dai_to_weth = self.prices("Sushiswap", dai_amount, self.token_address_dict["DAI"], self.token_address_dict["WETH"])/10**18
+        uni_weth_to_dai = self.prices("Uniswap", eth_amount, mainnetTokens.WETH["address"], mainnetTokens.DAI["address"])/10**18
+        uni_dai_to_weth = self.prices("Sushiswap", dai_amount, mainnetTokens.DAI["address"], mainnetTokens.WETH["address"])/10**18
         print("uniswap weth to dai price for", str(eth_amount/10**18), str(uni_weth_to_dai))
         print("sushiswap dai to weth price for", str(dai_amount/10**18), str(uni_dai_to_weth))
 
@@ -100,8 +100,8 @@ class IAmButASimpleFarmer():
         # check prices after the imbalance
         eth_amount = 10*10**18
         dai_amount = 10000*10**18
-        uni_weth_to_dai = self.prices("Uniswap", eth_amount, self.token_address_dict["WETH"], self.token_address_dict["DAI"])/10**18
-        uni_dai_to_weth = self.prices("Sushiswap", dai_amount, self.token_address_dict["DAI"], self.token_address_dict["WETH"])/10**18
+        uni_weth_to_dai = self.prices("Uniswap", eth_amount, mainnetTokens.WETH["address"], mainnetTokens.DAI["address"])/10**18
+        uni_dai_to_weth = self.prices("Sushiswap", dai_amount, mainnetTokens.DAI["address"], mainnetTokens.WETH["address"])/10**18
         print("uniswap weth to dai price for", str(eth_amount/10**18), str(uni_weth_to_dai))
         print("sushiswap dai to weth price for", str(dai_amount/10**18), str(uni_dai_to_weth))
 
@@ -133,11 +133,11 @@ class IAmButASimpleFarmer():
         self.print_balances(self.trading_wallet)
 
         print('making trades for fun and profit..')
-        self.swap("Uniswap", self.token_contract_dict["WETH"].functions.balanceOf(self.trading_wallet.address).call(), 1000, self.token_address_dict["WETH"], self.token_address_dict["DAI"], self.trading_wallet)
+        self.swap("Uniswap", self.token_contract_dict["WETH"].functions.balanceOf(self.trading_wallet.address).call(), 1000, mainnetTokens.WETH["address"], mainnetTokens.DAI["address"], self.trading_wallet)
 
-        self.swap("Sushiswap", self.token_contract_dict["DAI"].functions.balanceOf(self.trading_wallet.address).call(), 1000, self.token_address_dict["DAI"], self.token_address_dict["WETH"], self.trading_wallet)
+        self.swap("Sushiswap", self.token_contract_dict["DAI"].functions.balanceOf(self.trading_wallet.address).call(), 1000, mainnetTokens.DAI["address"], mainnetTokens.WETH["address"], self.trading_wallet)
 
-        print("total profit:", self.print_balances(self.trading_wallet) - starting_eth_balance, "ETH")
+        print("COMPETE.... total profit:", self.print_balances(self.trading_wallet) - starting_eth_balance, "ETH")
 
     def run(self):
         self.execute_setup(self.imbalancer_wallet)
