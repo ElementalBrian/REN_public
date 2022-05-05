@@ -136,7 +136,7 @@ class IAmButASimpleFarmer():
 
         self.swap("Sushiswap", self.token_contract_dict["DAI"].functions.balanceOf(self.trading_wallet.address).call(), 1000, mainnetTokens.DAI["address"], mainnetTokens.WETH["address"], self.trading_wallet)
 
-        print("COMPETE.... total profit:", self.print_balances(self.trading_wallet) - starting_eth_balance, "ETH")
+        print("COMPLETE.... total profit:", self.print_balances(self.trading_wallet) - starting_eth_balance, "ETH")
 
     def run(self):
         self.execute_setup(self.imbalancer_wallet)
