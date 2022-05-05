@@ -32,35 +32,34 @@ class IAmButASimpleFarmer():
             "WETH": self.web3.eth.contract(abi=self.wethabi, address=mainnetTokens.WETH["address"]),
             "DAI": self.web3.eth.contract(abi=self.erc20abi, address=mainnetTokens.DAI["address"])}
 
-        self.chainId = self.web3.eth.chain_id
 
 
     def approvals(self, contract, token, wallet):
-        transaction = self.token_contract_dict[token].functions.approve(self.exchange_address_dict[contract], 10000000000000000000000000000).buildTransaction({'chainId': self.chainId, 'gas': self.web3.toHex(50000),'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
+        transaction = self.token_contract_dict[token].functions.approve(self.exchange_address_dict[contract], 10000000000000000000000000000).buildTransaction({'chainId': self.web3.eth.chain_id, 'gas': self.web3.toHex(50000),'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
         print(f"approval for {contract} to spend {token} for {wallet.address}")
 
 
     def wrap_weth(self, amount, wallet):
-        transaction = self.token_contract_dict["WETH"].functions.deposit().buildTransaction({'value': amount,'chainId': self.chainId, 'gas': self.web3.toHex(50000),'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
+        transaction = self.token_contract_dict["WETH"].functions.deposit().buildTransaction({'value': amount,'chainId': self.web3.eth.chain_id, 'gas': self.web3.toHex(50000),'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
-        print(f"{wallet.address} wrapped {amount/10**18} WETH: {txhash.hex()}")
+        print(f"{wallet.address} wrapped {amount/10**18} WETH")
 
 
     def get_dai(self, amount, wallet):
-        transaction = self.exchange_contract_dict["Uniswap"].functions.swapExactETHForTokens(1, [mainnetTokens.WETH["address"], mainnetTokens.DAI["address"]], wallet.address, 1666666666).buildTransaction({'value': amount, 'chainId': self.chainId, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
+        transaction = self.exchange_contract_dict["Uniswap"].functions.swapExactETHForTokens(1, [mainnetTokens.WETH["address"], mainnetTokens.DAI["address"]], wallet.address, 1666666666).buildTransaction({'value': amount, 'chainId': self.web3.eth.chain_id, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100),'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
-        print(f"{wallet.address} swapped {amount/10**18} ETH for DAI: {txhash.hex()}")
+        print(f"{wallet.address} swapped {amount/10**18} ETH for DAI")
 
 
     def swap(self, exchange, amountIn, amountOutMin, inToken, outToken, wallet):
-        transaction = self.exchange_contract_dict[exchange].functions.swapExactTokensForTokens(amountIn, amountOutMin, [inToken, outToken], wallet.address, self.deadline).buildTransaction({'chainId': self.chainId, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100), 'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
+        transaction = self.exchange_contract_dict[exchange].functions.swapExactTokensForTokens(amountIn, amountOutMin, [inToken, outToken], wallet.address, self.deadline).buildTransaction({'chainId': self.web3.eth.chain_id, 'gas': self.web3.toHex(250000), 'gasPrice': self.web3.toHex(self.web3.eth.gasPrice*100), 'nonce': self.web3.toHex(self.web3.eth.getTransactionCount(wallet.address)), 'from': wallet.address})
         signedTx = self.web3.eth.account.signTransaction(transaction, wallet.privateKey)
         txhash = self.web3.eth.sendRawTransaction(signedTx.rawTransaction)
-        print(f"{wallet.address} swapped {amountIn/10**18} {mainnetTokens.address_to_coin[inToken]} for {mainnetTokens.address_to_coin[outToken]}: {txhash.hex()}")
+        print(f"{wallet.address} swapped {amountIn/10**18} {mainnetTokens.address_to_coin[inToken]} for {mainnetTokens.address_to_coin[outToken]} on {exchange}")
 
 
     def prices(self, exchange, amount, inToken, outToken):
