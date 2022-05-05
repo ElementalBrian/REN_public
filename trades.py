@@ -4,7 +4,7 @@ from web3 import Web3
 class IAmButASimpleFarmer():
 
     def __init__(self):
-        self.web3 = Web3(Web3.HTTPProvider('http://192.168.1.84:8547'))
+        self.web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8547'))
         self.uniswapabi = json.load(open('abi/uniswapV2abi.json', 'r'))
         self.uniswaprouterabi = json.load(open('abi/uniswaprouterabi.json', 'r'))
         self.erc20abi = json.load(open('abi/erc20abi.json', 'r'))
