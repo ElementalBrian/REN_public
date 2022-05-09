@@ -3,7 +3,7 @@
 
 
 Requirements:
-python3 with web3 libraries
+python3 with web3 libraries,
 ganache version 7 installed, https://trufflesuite.com/blog/introducing-ganache-7/
 
 
@@ -16,6 +16,7 @@ Instructions:
 
 
 Output:
+
 approval for Uniswap to spend WETH for 0x9dD2e5271c3F53B21876b579571d5Eb865650Fe9
 approval for Uniswap to spend DAI for 0x9dD2e5271c3F53B21876b579571d5Eb865650Fe9
 approval for Sushiswap to spend WETH for 0x9dD2e5271c3F53B21876b579571d5Eb865650Fe9
