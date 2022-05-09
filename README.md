@@ -9,9 +9,11 @@ ganache version 7 installed, https://trufflesuite.com/blog/introducing-ganache-7
 
 Instructions:
 1. Setup forked environment by running the ganache run script like so:
+
     ./run_ganache.sh
 
 2. In a new terminal window, run the trade script like so:
+
     ./run_trades.sh
 
 
